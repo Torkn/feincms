@@ -72,7 +72,7 @@ def ajax_editable_boolean_cell(item, attr, text='', override=None):
 
     If override is passed in, ignores the attr attribute and returns a
     static image for the override boolean with no user interaction possible
-    (useful for "disabled and you can't change it" situations).
+    (useful for disabled and you can't change it situations).
     """
     if text:
         text = '&nbsp;(%s)' % unicode(text)

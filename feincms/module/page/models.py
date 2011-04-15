@@ -864,12 +864,12 @@ class PageAdmin(editor.ItemEditor, editor.TreeEditor):
     def _refresh_changelist_caches(self, *args, **kwargs):
         self._visible_pages = list(self.model.objects.active().values_list('id', flat=True))
 
-    def change_view(self, request, object_id, extra_context=None):
+    def change_view(self, request, object_id, extra_context={}):
+
         # Hack around a Django bug: raw_id_fields aren't validated correctly for
         # ForeignKeys in 1.1: http://code.djangoproject.com/ticket/8746 details
         # the problem - it was fixed for MultipleChoiceFields but not ModelChoiceField
         # See http://code.djangoproject.com/ticket/9209
-
         if hasattr(self, "raw_id_fields"):
             for k in self.raw_id_fields:
                 if not k in request.POST:
@@ -888,23 +888,18 @@ class PageAdmin(editor.ItemEditor, editor.TreeEditor):
                 except ValueError:
                     request.POST[k] = None
 
-        try:
-            return super(PageAdmin, self).change_view(request, object_id, extra_context)
-        except PermissionDenied:
-            from django.contrib import messages
-            messages.add_message(request, messages.ERROR, _("You don't have the necessary permissions to edit this object"))
-        return HttpResponseRedirect(reverse('admin:page_page_changelist'))
+        return super(PageAdmin, self).change_view(request, object_id, extra_context)
 
-    # With hundreds of pages and many sites, the admin becomes unweildy.
-    # Rather than show all sites simultaneously, we pretend that the user has
-    # selected the current site in the admin filter if they have not made a
-    # different selection.  This also prevents dragging and dropping between
-    # sites, which can be problematic (the site of the dragged page needs to
-    # be changed, along with all child pages, and each such page needs to be
-    # reverified for clashes with the new sites URLs).
     def changelist_view(self, request, extra_context=None):
         "By default, only show pages from this site"
 
+        # With hundreds of pages and many sites, the admin becomes unweildy.
+        # Rather than show all sites simultaneously, we pretend that the user has
+        # selected the current site in the admin filter if they have not made a
+        # different selection.  This also prevents dragging and dropping between
+        # sites, which can be problematic (the site of the dragged page needs to
+        # be changed, along with all child pages, and each such page needs to be
+        # reverified for clashes with the new sites URLs).
         if hasattr(Site, 'page_set'):
             if not request.GET.has_key('site__id__exact'):
                 q = request.GET.copy()

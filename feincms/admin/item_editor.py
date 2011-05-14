@@ -198,9 +198,11 @@ class ItemEditor(StatefulFilterAdmin):
 
         return extra_context
 
-    def add_view(self, request, form_url='', extra_context={}):
+    def add_view(self, request, form_url='', extra_context=None):
         # insert dummy object as 'original' so template code can grab defaults
         # for template, etc.
+        if extra_context == None:
+            extra_context = {}
         extra_context['original'] = self.model()
 
         # If there are errors in the form, we need to preserve the object's
@@ -213,12 +215,15 @@ class ItemEditor(StatefulFilterAdmin):
         extra_context.update(self.get_extra_context(request))
         return super(ItemEditor, self).add_view(request, form_url, extra_context)
 
-    def change_view(self, request, object_id, extra_context={}):
+    def change_view(self, request, object_id, extra_context=None):
         self.model._needs_content_types()
 
         # Recognize frontend editing requests
         # This is done here so that the developer does not need to add
         # additional entries to # urls.py or something...
+        if extra_context == None:
+            extra_context = {}
+
         res = FRONTEND_EDITING_MATCHER.search(object_id)
         if res:
             return self._frontend_editing_view(

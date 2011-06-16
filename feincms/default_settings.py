@@ -11,7 +11,6 @@ All of these can be overridden by specifying them in the standard
 
 from os.path import join
 
-import django
 from django.conf import settings
 
 # ------------------------------------------------------------------------
@@ -39,7 +38,7 @@ FEINCMS_JQUERY_NO_CONFLICT = \
 # Settings for RichText
 FEINCMS_TINYMCE_INIT_TEMPLATE = 'admin/content/richtext/init_tinymce.html'
 FEINCMS_TINYMCE_INIT_CONTEXT  = {
-    'TINYMCE_JS_URL': join(FEINCMS_ADMIN_MEDIA, 'js/tiny_mce/tiny_mce.js'),
+    'TINYMCE_JS_URL': join(settings.STATIC_URL, 'js/tiny_mce/tiny_mce.js'),
     'TINYMCE_CONTENT_CSS_URL': None,
     'TINYMCE_LINK_LIST_URL': None
 }

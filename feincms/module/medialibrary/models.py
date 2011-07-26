@@ -17,7 +17,12 @@ from django.http import HttpResponseRedirect
 # 1.2 from django.views.decorators.csrf import csrf_protect
 
 from feincms import settings
+<<<<<<< HEAD
 from feincms.models import ExtensionsMixin
+=======
+from feincms.models import Base
+from feincms.utils import get_object
+>>>>>>> upstream/master
 
 from feincms.templatetags import feincms_thumbnail
 from feincms.translations import TranslatedObjectMixin, Translation, \
@@ -86,7 +91,15 @@ class MediaFileBase(models.Model, ExtensionsMixin, TranslatedObjectMixin):
     because of the (handy) extension mechanism.
     """
 
-    file = models.FileField(_('file'), max_length=255, upload_to=settings.FEINCMS_MEDIALIBRARY_UPLOAD_TO)
+    from django.core.files.storage import FileSystemStorage
+    default_storage_class = getattr(django_settings, 'DEFAULT_FILE_STORAGE',
+                                    'django.core.files.storage.FileSystemStorage')
+    default_storage = get_object(default_storage_class)
+
+    fs = default_storage(location=settings.FEINCMS_MEDIALIBRARY_ROOT,
+                           base_url=settings.FEINCMS_MEDIALIBRARY_URL)
+
+    file = models.FileField(_('file'), max_length=255, upload_to=settings.FEINCMS_MEDIALIBRARY_UPLOAD_TO, storage=fs)
     type = models.CharField(_('file type'), max_length=12, editable=False, choices=())
     created = models.DateTimeField(_('created'), editable=False, default=datetime.now)
     copyright = models.CharField(_('copyright'), max_length=200, blank=True)

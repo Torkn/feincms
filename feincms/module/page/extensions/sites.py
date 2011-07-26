@@ -2,14 +2,22 @@ from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.db import models
 from django.contrib.sites.models import Site
-from django.contrib.admin.filterspecs import FilterSpec, ChoicesFilterSpec
+
+try:
+    from django.contrib.admin.filters import FieldListFilter, ChoicesFieldListFilter
+    legacy = False
+except ImportError: # Django up to 1.3
+    from django.contrib.admin.filterspecs import (
+        FilterSpec as FieldListFilter,
+        ChoicesFilterSpec as ChoicesFieldListFilter)
+    legacy = True
 
 from feincms.module.page.models import PageManager
 
 class SiteForeignKey(models.ForeignKey):
     description = 'A ForeignKey for Site with a custom admin filter'
 
-class SiteFilterSpec(ChoicesFilterSpec):
+class SiteFieldListFilter(ChoicesFieldListFilter):
     "Custom admin filter for Page.site"
 
     def __init__(self, f, request, params, model, model_admin, field_path=None):
@@ -35,8 +43,13 @@ class SiteFilterSpec(ChoicesFilterSpec):
         return _('Site')
 
 # Register the custom admin filter
-FilterSpec.filter_specs.insert(0, (lambda f: isinstance(f, SiteForeignKey),
-                                   SiteFilterSpec))
+if legacy:
+    FilterListFilter.filter_specs.insert(0,
+                                         (lambda f: isinstance(f, SiteForeignKey), SiteFieldListFilter))
+else:
+    FieldListFilter.register(lambda f: getattr(f, 'site_filter', False),
+                             SiteFieldListFilter,
+                             take_priority=True)
 
 def register(cls, admin_cls):
     "Add a foreign key on Site to the Page model"

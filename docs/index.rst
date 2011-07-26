@@ -27,6 +27,9 @@ CMS without being forced to use whatever the developers deemed best:
     from django.db import models
 
     class TextilePageContent(models.Model):
+        class Meta:
+            abstract = True
+
         content = models.TextField()
 
         def render(self, **kwargs):
@@ -54,6 +57,7 @@ Contents
    templatetags
    advanced/index
    faq
+   contributing
 
 
 API Documentation
@@ -86,6 +90,7 @@ Releases
 .. toctree::
    :maxdepth: 1
 
+   releases/1.4
    releases/1.3
    releases/1.2
 

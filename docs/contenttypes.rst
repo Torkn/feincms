@@ -187,7 +187,7 @@ they need. The mechanism in use is almost the same as the one used in
 Include the following code in the `<head>` section of your template to include
 all JS and CSS media file definitions::
 
-    {% feincms_page.content.media %}
+    {{ feincms_page.content.media }}
 
 
 The individual content types should use a ``media`` property do define the
@@ -281,10 +281,16 @@ Here's an example form-handling content which uses all of these facilities::
             response['Cache-Control'] = 'no-cache, must-revalidate'
 
 
-Please note that the ``render`` method should not raise an exception if
-``process`` has not been called beforehand. The FeinCMS page module views
-guarantee that ``process`` is called beforehand, other modules may not do
-so. ``feincms.module.blog`` for instance does not.
+.. note::
+
+   Please note that the ``render`` method should not raise an exception if
+   ``process`` has not been called beforehand.
+
+.. warning::
+
+   The FeinCMS page module views
+   guarantee that ``process`` is called beforehand, other modules may not do
+   so. ``feincms.module.blog`` for instance does not.
 
 
 Bundled content types
@@ -329,7 +335,7 @@ position. You should probably use the MediaFileContent though.
 
 Media library integration
 -------------------------
-.. module:: feincms.content.medialibrary.models
+.. module:: feincms.content.medialibrary.v2
 .. class:: MediaFileContent()
 
 Mini-framework for arbitrary file types with customizable rendering
@@ -337,9 +343,9 @@ methods per-filetype.  Add 'feincms.module.medialibrary' to INSTALLED_APPS.
 
 Additional arguments for :func:`~feincms.models.Base.create_content_type`:
 
-* ``POSITION_CHOICES``: (mandatory)
+* ``TYPE_CHOICES``: (mandatory)
 
-  A list of tuples for the position dropdown.
+  A list of tuples for the type choice radio input fields.
 
 
 Raw content
@@ -425,6 +431,12 @@ This content scans all template directories for templates below
 which are rendered using the Django template language.
 
 Template usage isn't restricted in any way.
+
+.. note::
+
+   You cannot use Django's cached template loader with ``TemplateContent``
+   currently. The cached template loader has no way of enumerating
+   available templates in the filesystem.
 
 
 Video inclusion code for youtube, vimeo etc.

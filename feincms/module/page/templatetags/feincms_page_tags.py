@@ -1,3 +1,7 @@
+# ------------------------------------------------------------------------
+# coding=utf-8
+# ------------------------------------------------------------------------
+
 from django import template
 from django.conf import settings
 from django.http import HttpRequest
@@ -33,9 +37,10 @@ class NavigationNode(SimpleAssignmentNodeWithVarAndArgs):
     def what(self, instance, args):
         level = int(args.get('level', 1))
         depth = int(args.get('depth', 1))
+        mptt_limit = level + depth - 1 # adjust limit to mptt level indexing
 
         if isinstance(instance, HttpRequest):
-            instance = Page.objects.from_request(instance)
+            instance = Page.objects.for_request(instance)
 
         entries = self._what(instance, level, depth)
 
@@ -47,8 +52,9 @@ class NavigationNode(SimpleAssignmentNodeWithVarAndArgs):
                 entries.append(entry)
 
                 if getattr(entry, 'navigation_extension', None):
-                    entries.extend(entry.extended_navigation(depth=depth,
-                        request=self.render_context.get('request', None)))
+                    entries.extend(e for e in entry.extended_navigation(depth=depth,
+                        request=self.render_context.get('request', None))
+                        if getattr(e, 'level', 0) < mptt_limit)
 
         return entries
 
@@ -84,6 +90,7 @@ class NavigationNode(SimpleAssignmentNodeWithVarAndArgs):
                 return PageManager.apply_active_filters(queryset)
 register.tag('feincms_navigation', do_simple_assignment_node_with_var_and_args_helper(NavigationNode))
 
+# ------------------------------------------------------------------------
 class ExtendedNavigationNode(NavigationNode):
     def render(self, context):
         self.render_context = context
@@ -131,6 +138,8 @@ class LanguageLinksNode(SimpleAssignmentNodeWithVarAndArgs):
 
     * all or existing: Return all languages or only those where a translation exists
     * excludecurrent: Excludes the item in the current language from the list
+    * request=request: The current request object, only needed if you are using
+      AppContents and need to append the "extra path"
 
     The default behavior is to return an entry for all languages including the
     current language.
@@ -183,15 +192,14 @@ def _translate_page_into(page, language, default=None):
     if page.language == language:
         return page
 
-    translations = dict((t.language, t) for t in page.available_translations())
-    translations[page.language] = page
+    if language is not None:
+        translations = dict((t.language, t) for t in page.available_translations())
+        if language in translations:
+            return translations[language]
 
-    if language in translations:
-        return translations[language]
-    else:
-        if hasattr(default, '__call__'):
-            return default(page=page)
-        return default
+    if hasattr(default, '__call__'):
+        return default(page=page)
+    return default
 
 # ------------------------------------------------------------------------
 class TranslatedPageNode(SimpleAssignmentNodeWithVarAndArgs):
@@ -213,11 +221,16 @@ class TranslatedPageNode(SimpleAssignmentNodeWithVarAndArgs):
     not do what is intended.
     """
     def what(self, page, args, default=None):
-        language = args.get('language',False)
-        if not language:
+        language = args.get('language', None)
+
+        if language is None:
             language = settings.LANGUAGES[0][0]
-        elif language not in (x[0] for x in settings.LANGUAGES):
-            language = template.Variable(language).resolve(self.render_context)
+        else:
+            if language not in (x[0] for x in settings.LANGUAGES):
+                try:
+                    language = template.Variable(language).resolve(self.render_context)
+                except template.VariableDoesNotExist:
+                    language = settings.LANGUAGES[0][0]
 
         return _translate_page_into(page, language, default=default)
 register.tag('feincms_translatedpage', do_simple_assignment_node_with_var_and_args_helper(TranslatedPageNode))
@@ -281,6 +294,16 @@ def is_parent_of(page1, page2):
 # ------------------------------------------------------------------------
 @register.filter
 def is_equal_or_parent_of(page1, page2):
+    """
+    Determines whether a given page is equal to or the parent of another
+    page. This is especially handy when generating the navigation. The following
+    example adds a CSS class ``current`` to the current main navigation entry::
+
+        {% for page in navigation %}
+            <a {% if page|is_equal_or_parent_of:feincms_page %}class="mark"{% endif %}>
+                {{ page.title }}</a>
+        {% endfor %}
+    """
     try:
         return page1.tree_id == page2.tree_id and page1.lft <= page2.lft and page1.rght >= page2.rght
     except AttributeError:

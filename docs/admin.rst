@@ -132,19 +132,11 @@ Customizing the item editor
             )
         )
 
-.. versionchanged:: 1.2.0
-
-* ``show_on_top`` (**deprecated**; use standard ``fieldsets`` instead)
-
-  A tuple which describes, which fields should be shown above the tabbed item
-  editor interface. For backwards compatibility this tuple is converted to
-  a fieldset which is prepended to ``fieldsets`` to appear at the top.
-
 
 Customizing the individual content type forms
 ---------------------------------------------
 
-Customizing the individual content type editors is easily possible through three
+Customizing the individual content type editors is easily possible through four
 settings on the content type model itself:
 
 * ``feincms_item_editor_context_processors``:
@@ -193,6 +185,14 @@ settings on the content type model itself:
 
   Take a look at the ``mediafile`` and ``richtext`` item editor include files
   to understand how this should be done.
+
+* ``feincms_item_editor_inline``:
+
+  .. versionadded:: 1.4.0
+
+  This can be used to override the ``InlineModelAdmin`` class used for the
+  content type. The custom inline should inherit from ``FeinCMSInline``
+  or be configured the same way.
 
 
 Putting it all together

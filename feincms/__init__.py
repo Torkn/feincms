@@ -1,4 +1,4 @@
-VERSION = (1, 3, 0)
+VERSION = (1, 4, 0, 'pre1')
 __version__ = '.'.join(map(str, VERSION))
 
 
@@ -32,7 +32,7 @@ def ensure_completely_loaded():
     types.
 
     For more informations, have a look at issue #23 on github:
-    http://github.com/matthiask/feincms/issues#issue/23
+    http://github.com/feincms/feincms/issues#issue/23
     """
 
     global COMPLETELY_LOADED

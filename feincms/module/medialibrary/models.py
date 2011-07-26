@@ -17,12 +17,9 @@ from django.http import HttpResponseRedirect
 # 1.2 from django.views.decorators.csrf import csrf_protect
 
 from feincms import settings
-<<<<<<< HEAD
 from feincms.models import ExtensionsMixin
-=======
 from feincms.models import Base
 from feincms.utils import get_object
->>>>>>> upstream/master
 
 from feincms.templatetags import feincms_thumbnail
 from feincms.translations import TranslatedObjectMixin, Translation, \

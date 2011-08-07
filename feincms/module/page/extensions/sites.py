@@ -44,7 +44,7 @@ class SiteFieldListFilter(ChoicesFieldListFilter):
 
 # Register the custom admin filter
 if legacy:
-    FilterListFilter.filter_specs.insert(0,
+    FieldListFilter.filter_specs.insert(0,
                                          (lambda f: isinstance(f, SiteForeignKey), SiteFieldListFilter))
 else:
     FieldListFilter.register(lambda f: getattr(f, 'site_filter', False),

@@ -1,3 +1,7 @@
+# ------------------------------------------------------------------------
+# coding=utf-8
+# ------------------------------------------------------------------------
+
 import re
 import copy
 
@@ -14,12 +18,14 @@ from django.utils.translation import ugettext as _
 from django.contrib.admin.options import InlineModelAdmin
 
 from feincms import settings, ensure_completely_loaded
+from feincms.signals import itemeditor_post_save_related
 
+# ------------------------------------------------------------------------
 FRONTEND_EDITING_MATCHER = re.compile(r'(\d+)\|(\w+)\|(\d+)')
 FEINCMS_CONTENT_FIELDSET_NAME = 'FEINCMS_CONTENT'
 FEINCMS_CONTENT_FIELDSET = (FEINCMS_CONTENT_FIELDSET_NAME, {'fields': ()})
 
-
+# ------------------------------------------------------------------------
 class StatefulFilterAdmin(admin.ModelAdmin):
     """A version of admin.ModelAdmin that remembers the admin filter state.
     After editing an item, it returns to the Model admin with filter state restored.
@@ -43,6 +49,7 @@ class StatefulFilterAdmin(admin.ModelAdmin):
             result = super(StatefulFilterAdmin, self).change_view(request, object_id, extra_context )
         return result
 
+# ------------------------------------------------------------------------
 class ItemEditorForm(forms.ModelForm):
     """
     The item editor form contains hidden region and ordering fields and should
@@ -52,7 +59,7 @@ class ItemEditorForm(forms.ModelForm):
     region = forms.CharField(widget=forms.HiddenInput())
     ordering = forms.IntegerField(widget=forms.HiddenInput())
 
-
+# ------------------------------------------------------------------------
 class FeinCMSInline(InlineModelAdmin):
     """
     Custom ``InlineModelAdmin`` subclass used for content types.
@@ -63,7 +70,7 @@ class FeinCMSInline(InlineModelAdmin):
     fk_name = 'parent'
     template = 'admin/feincms/content_inline.html'
 
-
+# ------------------------------------------------------------------------
 class ItemEditor(StatefulFilterAdmin):
     """
     The ``ItemEditor`` is a drop-in replacement for ``ModelAdmin`` with the
@@ -239,6 +246,21 @@ class ItemEditor(StatefulFilterAdmin):
         context.update(self.get_extra_context(request))
         context.update(extra_context)
         return super(ItemEditor, self).change_view(request, object_id, context)
+
+    # The next two add support for sending a "saving done" signal as soon
+    # as all relevant data have been saved (especially all foreign key relations)
+    # This can be used to keep functionality dependend on item content happy.
+    # NOTE: These two can (and probably should) be replaced by overriding
+    # `save_related` as soon as we don't depend on Django<1.4 any more.
+    def response_add(self, request, obj, *args, **kwargs):
+        r = super(ItemEditor, self).response_add(request, obj, *args, **kwargs)
+        itemeditor_post_save_related.send(sender=obj.__class__, instance=obj, created=True)
+        return r
+
+    def response_change(self, request, obj, *args, **kwargs):
+        r = super(ItemEditor, self).response_change(request, obj, *args, **kwargs)
+        itemeditor_post_save_related.send(sender=obj.__class__, instance=obj, created=False)
+        return r
 
     @property
     def change_form_template(self):

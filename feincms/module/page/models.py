@@ -39,7 +39,6 @@ from feincms.models import Base, create_base_model
 from feincms.utils import get_object, copy_model_instance
 import feincms.admin.filterspecs
 
-
 # ------------------------------------------------------------------------
 class ActiveAwareContentManagerMixin(object):
     """
@@ -771,9 +770,7 @@ class PageAdminForm(forms.ModelForm):
 
         return cleaned_data
 
-
 # ------------------------------------------------------------------------
-
 def sort_children(modeladmin, request, queryset):
     "Admin action that sorts the children of selected pages according to title"
     for parent in queryset.all():
@@ -787,6 +784,7 @@ def sort_children(modeladmin, request, queryset):
             previous_child = child
 sort_children.short_description = "Sort children by title"
 
+# ------------------------------------------------------------------------
 class PageAdmin(editor.ItemEditor, editor.TreeEditor):
     class Media:
         css = {}
@@ -852,9 +850,10 @@ class PageAdmin(editor.ItemEditor, editor.TreeEditor):
                 page.id)
         actions = super(PageAdmin, self)._actions_column(page)
         if editable:
-            actions.insert(0, u'<a href="add/?parent=%s" title="%s"><img src="%simg/admin/icon_addlink.gif" alt="%s"></a>' % ( page.pk, _('Add child page'), django_settings.ADMIN_MEDIA_PREFIX ,_('Add child page')))
-        actions.insert(0, u'<a href="%s" title="%s"><img src="%simg/admin/selector-search.gif" alt="%s" /></a>' % (
-            preview_url, _('View on site'), django_settings.ADMIN_MEDIA_PREFIX, _('View on site')))
+            actions.insert(0, u'<a href="add/?parent=%s" title="%s"><img src="%sicon_addlink.gif" alt="%s"></a>' % (
+                page.pk, _('Add child page'), settings._HACK_ADMIN_MEDIA_IMAGES ,_('Add child page')))
+        actions.insert(0, u'<a href="%s" title="%s"><img src="%sselector-search.gif" alt="%s" /></a>' % (
+            preview_url, _('View on site'), settings._HACK_ADMIN_MEDIA_IMAGES, _('View on site')))
 
         return actions
 

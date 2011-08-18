@@ -1,4 +1,4 @@
-VERSION = (1, 4, 0, 'pre1')
+VERSION = (1, 4, 1)
 __version__ = '.'.join(map(str, VERSION))
 
 
@@ -8,7 +8,7 @@ class LazySettings(object):
         from django.conf import settings as django_settings
 
         for key in dir(default_settings):
-            if not key.startswith('FEINCMS_'):
+            if not key.startswith(('FEINCMS_', '_HACK_')):
                 continue
 
             setattr(self, key, getattr(django_settings, key,

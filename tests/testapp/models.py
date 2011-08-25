@@ -41,7 +41,8 @@ def get_admin_fields(form, *args, **kwargs):
     }
 
 Page.create_content_type(ApplicationContent, APPLICATIONS=(
-    ('blog_urls', 'Blog', {'admin_fields': get_admin_fields}),
+    ('tests.testapp.blog_urls', 'Blog', {'admin_fields': get_admin_fields}),
+    ('whatever', 'Test Urls', {'urls': 'tests.testapp.applicationcontent_urls'}),
     ))
 
 
@@ -66,7 +67,7 @@ class BlogEntriesNavigationExtension(NavigationExtension):
         for entry in Entry.objects.all():
             yield PagePretender(
                 title=entry.title,
-                url=reverse('blog_urls/blog_entry_details', kwargs={'object_id': entry.id}),
+                url=reverse('tests.testapp.blog_urls/blog_entry_details', kwargs={'object_id': entry.id}),
                 )
 
 Page.register_extensions('navigation')
@@ -99,5 +100,4 @@ if mptt_register:
 # add m2m field to entry so it shows up in entry admin
 Entry.add_to_class('categories', models.ManyToManyField(Category, blank=True, null=True))
 EntryAdmin.list_filter += ('categories',)
-
 

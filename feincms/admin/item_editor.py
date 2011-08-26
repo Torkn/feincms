@@ -31,12 +31,6 @@ class StatefulFilterAdmin(admin.ModelAdmin):
     After editing an item, it returns to the Model admin with filter state restored.
     See http://djangosnippets.org/snippets/2531/
     """
-    def add_view(self, request, *args, **kwargs):
-        "Delete the session key after saving a new object"
-        result = super(StatefulFilterAdmin, self).add_view(request, *args, **kwargs )
-        request.session['admin_filter'] =  None
-        return result
-
     def change_view(self, request, object_id, extra_context=None):
         """
         Save the referer of the page to return to the filtered
@@ -48,7 +42,7 @@ class StatefulFilterAdmin(admin.ModelAdmin):
         ref = request.META.get('HTTP_REFERER', '')
         if ref.find('?') != -1:
             # We've got a query string, set the session value
-            request.session['admin_filter'] =  ref
+            request.session['feincms_admin_filter'] =  ref
 
         if request.POST.has_key('_save'):
             """
@@ -57,9 +51,9 @@ class StatefulFilterAdmin(admin.ModelAdmin):
             delete the key.
             """
             try:
-                if request.session['admin_filter'] is not None:
-                    result['Location'] = request.session['admin_filter']
-                    request.session['admin_filter'] = None
+                if request.session['feincms_admin_filter'] is not None:
+                    result['Location'] = request.session['feincms_admin_filter']
+                    request.session['feincms_admin_filter'] = None
             except:
                 pass
 

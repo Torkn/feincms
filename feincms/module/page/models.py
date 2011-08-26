@@ -886,7 +886,7 @@ class PageAdmin(editor.ItemEditor, editor.TreeEditor):
 
     def change_view(self, request, object_id, extra_context=None):
         try:
-            result = super(DocumentAdmin, self).change_view(request, object_id, extra_context)
+            result = super(PageAdmin, self).change_view(request, object_id, extra_context)
         except PermissionDenied:
             from django.contrib import messages
             messages.add_message(request, messages.ERROR, _("You don't have the necessary permissions to edit this object"))

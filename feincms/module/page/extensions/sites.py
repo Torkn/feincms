@@ -59,14 +59,10 @@ def register(cls, admin_cls):
                                     default=settings.SITE_ID,
                                     ))
 
-    # If the site does not match, the page is not active
-    PageManager.add_to_active_filters(models.Q(site=settings.SITE_ID))
+    PageManager.add_to_active_filters(current_site, key='current_site')
 
     # Show the site on the admin list
     admin_cls.list_display.extend(['site'])
-
-    # Add the site filter
-    admin_cls.list_filter.extend(['site'])
 
 try:
     from south.modelsinspector import add_introspection_rules

@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 
 from feincms import settings
-from feincms.admin.editor import ItemEditorForm
+from feincms.admin.item_editor import ItemEditorForm
 from feincms.utils import get_object
 
 class RichTextContentAdminForm(ItemEditorForm):
@@ -97,13 +97,27 @@ class RichTextContent(models.Model):
     def save(self, *args, **kwargs):
         # TODO: Move this to the form?
         if getattr(self, 'cleanse', False):
-            from feincms.utils.html.cleanse import cleanse_html
-            self.text = cleanse_html(self.text)
+            try:
+                # Passes the rich text content as first argument because
+                # the passed callable has been converted into a bound method
+                self.text = self.cleanse(self.text)
+            except TypeError:
+                # Call the original callable, does not pass the rich text
+                # content instance along
+                self.text = self.cleanse.im_func(self.text)
+
         super(RichTextContent, self).save(*args, **kwargs)
 
     @classmethod
     def initialize_type(cls, cleanse=False):
-        cls.cleanse = cleanse
+        if cleanse:
+            # If cleanse is True use default cleanse method
+            if cleanse == True:
+                from feincms.utils.html.cleanse import cleanse_html
+                cls.cleanse = cleanse_html
+            # Otherwise use passed callable
+            else:
+                cls.cleanse = cleanse
 
         # TODO: Move this into somewhere more generic:
         if settings.FEINCMS_TIDY_HTML:
@@ -112,4 +126,3 @@ class RichTextContent(models.Model):
                 get_object(settings.FEINCMS_TIDY_FUNCTION)
             except ImportError, e:
                 raise ImproperlyConfigured("FEINCMS_TIDY_HTML is enabled but the HTML tidy function %s could not be imported: %s" % (settings.FEINCMS_TIDY_FUNCTION, e))
-

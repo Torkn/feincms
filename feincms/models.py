@@ -5,7 +5,6 @@ All models defined here are abstract, which means no tables are created in
 the feincms\_ namespace.
 """
 
-import itertools
 import operator
 import warnings
 
@@ -21,13 +20,8 @@ from django.utils.datastructures import SortedDict
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext_lazy as _
 
-from feincms import settings, ensure_completely_loaded
+from feincms import ensure_completely_loaded
 from feincms.utils import get_object, copy_model_instance
-
-try:
-    import reversion
-except ImportError:
-    reversion = None
 
 try:
     any
@@ -322,14 +316,18 @@ class ExtensionsMixin(object):
                             fn = get_object('%s.%s.register' % (path, ext))
                             if fn:
                                 break
-                        except ImportError, e:
+                        except ImportError:
                             pass
 
                 if not fn:
                     raise ImproperlyConfigured, '%s is not a valid extension for %s' % (
                         ext, cls.__name__)
 
-            # Not a string, so take our chances and just try to access "register"
+            # Not a string, maybe a callable?
+            elif hasattr(ext, '__call__'):
+                fn = ext
+
+            # Take our chances and just try to access "register"
             else:
                 fn = ext.register
 
@@ -442,7 +440,6 @@ def create_base_model(inherit_from=models.Model):
             cls._feincms_all_regions = set()
             for template in cls._feincms_templates.values():
                 cls._feincms_all_regions.update(template.regions)
-
 
         #: ``ContentProxy`` class this object uses to collect content blocks
         content_proxy_class = ContentProxy
@@ -731,27 +728,6 @@ def create_base_model(inherit_from=models.Model):
                 for key, includes in model.feincms_item_editor_includes.items():
                     cls.feincms_item_editor_includes.setdefault(key, set()).update(includes)
 
-            # Ensure meta information concerning related fields is up-to-date.
-            #
-            # Upon accessing the related fields information from Model._meta, the related
-            # fields are cached and never refreshed again (because models and model relations
-            # are defined upon import time, if you do not fumble around with models like we
-            # do right here.)
-            #
-            # Adding related models after this information has been cached leads to models
-            # not knowing about related items, which again causes the bug we had in
-            # issue #63 on github:
-            #
-            # http://github.com/feincms/feincms/issues/issue/63/
-            #
-            # Currently, all methods filling up the Model.meta cache start with fill_.
-            # We call all these methods upon creation of a new content type to make sure
-            # that we really really do not forget a relation somewhere. Of course, we do
-            # too much here, but better a bit too much upon application startup than not
-            # enough like before.
-            for fn in [s for s in dir(cls._meta) if s[:6]=='_fill_']:
-                getattr(cls._meta, fn)()
-
             return new_type
 
         @property
@@ -779,6 +755,8 @@ def create_base_model(inherit_from=models.Model):
 
         @classmethod
         def _needs_templates(cls):
+            ensure_completely_loaded()
+
             # helper which can be used to ensure that either register_regions or
             # register_templates has been executed before proceeding
             if not hasattr(cls, 'template'):
@@ -820,8 +798,11 @@ def create_base_model(inherit_from=models.Model):
 
         @classmethod
         def register_with_reversion(cls):
-            if not reversion:
+            try:
+                import reversion
+            except ImportError:
                 raise EnvironmentError("django-reversion is not installed")
+
             follow = []
             for content_type_model in cls._feincms_content_types:
                 related_manager = "%s_set" % content_type_model.__name__.lower()

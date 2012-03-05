@@ -51,6 +51,9 @@ else:
                              SiteFieldListFilter,
                              take_priority=True)
 
+def current_site(queryset):
+    return queryset.filter(site=Site.objects.get_current())
+
 def register(cls, admin_cls):
     "Add a foreign key on Site to the Page model"
     cls.add_to_class('site',
